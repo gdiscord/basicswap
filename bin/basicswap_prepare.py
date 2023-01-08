@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2019-2023 tecnovert
+# Copyright (c) 2019-2022 tecnovert
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php.
 
@@ -61,6 +61,9 @@ DASH_VERSION_TAG = os.getenv('DASH_VERSION_TAG', '')
 FIRO_VERSION = os.getenv('FIRO_VERSION', '0.14.99.1')
 FIRO_VERSION_TAG = os.getenv('FIRO_VERSION_TAG', '')
 
+DIGIWAGE_VERSION = os.getenv('DIGIWAGE_VERSION', '2.0.1')
+DIGIWAGE_VERSION_TAG = os.getenv('DIGIWAGE_VERSION_TAG', '')
+
 GUIX_SSL_CERT_DIR = None
 
 
@@ -74,6 +77,8 @@ known_coins = {
     'dash': (DASH_VERSION, DASH_VERSION_TAG, ('pasta',)),
     # 'firo': (FIRO_VERSION, FIRO_VERSION_TAG, ('reuben',)),
     'firo': (FIRO_VERSION, FIRO_VERSION_TAG, ('tecnovert',)),
+    'digiwage': (DIGIWAGE_VERSION, DIGIWAGE_VERSION_TAG, ('digiwage',)),
+
 }
 
 expected_key_ids = {
@@ -86,6 +91,7 @@ expected_key_ids = {
     'fuzzbawls': ('3BDCDA2D87A881D9',),
     'pasta': ('52527BEDABE87984',),
     'reuben': ('1290A1D0FA7EE109',),
+    'digiwage': ('8797E069355897D7',),
 }
 
 USE_PLATFORM = os.getenv('USE_PLATFORM', platform.system())
@@ -158,6 +164,12 @@ FIRO_RPC_PORT = int(os.getenv('FIRO_RPC_PORT', 8888))
 FIRO_ONION_PORT = int(os.getenv('FIRO_ONION_PORT', 8168))  # nDefaultPort
 FIRO_RPC_USER = os.getenv('FIRO_RPC_USER', '')
 FIRO_RPC_PWD = os.getenv('FIRO_RPC_PWD', '')
+
+WAGE_RPC_HOST = os.getenv('WAGE_RPC_HOST', '127.0.0.1')
+WAGE_RPC_PORT = int(os.getenv('WAGE_RPC_PORT', 46002))
+WAGE_ONION_PORT = int(os.getenv('WAGE_ONION_PORT', 46003))  # nDefaultPort
+WAGE_RPC_USER = os.getenv('WAGE_RPC_USER', '')
+WAGE_RPC_PWD = os.getenv('WAGE_RPC_PWD', '')
 
 TOR_PROXY_HOST = os.getenv('TOR_PROXY_HOST', '127.0.0.1')
 TOR_PROXY_PORT = int(os.getenv('TOR_PROXY_PORT', 9050))
@@ -357,13 +369,6 @@ def testOnionLink():
     test_response = downloadBytes(test_url).decode('utf-8')
     assert ('The Tor Project\'s free software protects your privacy online.' in test_response)
     logger.info('Onion links work.')
-
-
-def havePubkey(gpg, key_id):
-    for key in gpg.list_keys():
-        if key['keyid'] == key_id:
-            return True
-    return False
 
 
 def downloadPIVXParams(output_dir):
@@ -586,6 +591,11 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
             release_url = 'https://github.com/tecnovert/particl-core/releases/download/v{}/{}'.format(version + version_tag, release_filename)
             assert_filename = 'pivx-{}-6.0-build.assert'.format(os_name)
             assert_url = 'https://raw.githubusercontent.com/tecnovert/gitian.sigs/pivx/5.4.99_scantxoutset-{}/tecnovert/{}'.format(os_dir_name, assert_filename)
+        elif coin == 'digiwage':
+            release_filename = '{}-{}-{}.{}'.format(coin, version, BIN_ARCH, FILE_EXT)
+            release_url = 'https://github.com/digiwage/digiwage/releases/download/v{}/{}'.format(version + version_tag, release_filename)
+            assert_filename = 'SHA256SUMS.asc'
+            assert_url = 'https://github.com/digiwage/digiwage/releases/download/delta-2.0.1/SHA256SUMS.asc'
         elif coin == 'dash':
             release_filename = '{}-{}-{}.{}'.format('dashcore', version + version_tag, BIN_ARCH, FILE_EXT)
             release_url = 'https://github.com/dashpay/dash/releases/download/v{}/{}'.format(version + version_tag, release_filename)
@@ -614,9 +624,18 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
                 raise ValueError('Firo: Unknown architecture')
             release_url = 'https://github.com/tecnovert/particl-core/releases/download/v{}/{}'.format(version + version_tag, release_filename)
             assert_url = 'https://github.com/tecnovert/particl-core/releases/download/v%s/SHA256SUMS.asc' % (version + version_tag)
+       #elif coin == 'digiwage':
+          #  if BIN_ARCH == 'x86_64-linux-gnu':
+           #     release_filename = 'digiwage-2.0.1-x86_64-linux-gnu.tar.gz'
+          #  elif BIN_ARCH == 'osx64':
+          #      release_filename = 'digiwage-2.0.1-x86_64-apple-darwin18.tar.gz'
+        #    else:
+        #        raise ValueError('Digiwage: Unknown architecture')
+        #    release_url = 'https://github.com/digiwage/digiwage/releases/download/v{}/{}'.format(version + version_tag, release_filename)
+         #   assert_url = 'https://github.com/digiwage/digiwage/releases/download/delta-2.0.1/SHA256SUMS.asc'
+           # assert_url = 'https://github.com/digiwage/digiwage/releases/download/v%s/SHA256SUMS.asc' % (version + version_tag)
         else:
             raise ValueError('Unknown coin')
-
         release_path = os.path.join(bin_dir, release_filename)
         if not os.path.exists(release_path):
             downloadFile(release_url, release_path)
@@ -627,7 +646,7 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
         if not os.path.exists(assert_path):
             downloadFile(assert_url, assert_path)
 
-        if coin not in ('firo', ):
+        if coin not in ('firo', 'digiwage'):
             assert_sig_url = assert_url + ('.asc' if major_version >= 22 else '.sig')
             assert_sig_filename = '{}-{}-{}-build-{}.assert.sig'.format(coin, os_name, version, signing_key_name)
             assert_sig_path = os.path.join(bin_dir, assert_sig_filename)
@@ -665,6 +684,8 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
 
     if coin in ('pivx', 'firo'):
         pubkey_filename = '{}_{}.pgp'.format('particl', signing_key_name)
+    elif coin == 'digiwage':
+        pubkey_filename = 'digiwage.asc'
     else:
         pubkey_filename = '{}_{}.pgp'.format(coin, signing_key_name)
     pubkeyurls = [
@@ -677,8 +698,10 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
         pubkeyurls.append('https://raw.githubusercontent.com/monero-project/monero/master/utils/gpg_keys/binaryfate.asc')
     if coin == 'firo':
         pubkeyurls.append('https://firo.org/reuben.asc')
+    if coin == 'digiwage':
+        pubkeyurls.append('https://raw.githubusercontent.com/digiwage/digiwage/master/digiwage.asc')
 
-    if coin in ('monero', 'firo'):
+    if coin in ('monero', 'firo','digiwage'):
         with open(assert_path, 'rb') as fp:
             verified = gpg.verify_file(fp)
 
@@ -700,7 +723,6 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
     ensureValidSignatureBy(verified, signing_key_name)
 
     extractCore(coin, version_data, settings, bin_dir, release_path, extra_opts)
-
 
 def writeTorSettings(fp, coin, coin_settings, tor_control_password):
     onionport = coin_settings['onionport']
@@ -742,7 +764,8 @@ def prepareDataDir(coin, settings, chain, particl_mnemonic, extra_opts={}):
             if chain == 'testnet':
                 fp.write('testnet=1\n')
             config_datadir = data_dir
-            if extra_opts.get('use_containers', False) is True:
+            if core_settings['manage_daemon'] is False:
+                # Assume conf file is for isolated coin docker setup
                 config_datadir = '/data'
             fp.write(f'data-dir={config_datadir}\n')
             fp.write('rpc-bind-port={}\n'.format(core_settings['rpcport']))
@@ -767,14 +790,16 @@ def prepareDataDir(coin, settings, chain, particl_mnemonic, extra_opts={}):
         if os.path.exists(wallet_conf_path):
             exitWithError('{} exists'.format(wallet_conf_path))
         with open(wallet_conf_path, 'w') as fp:
-            config_datadir = os.path.join(data_dir, 'wallets')
             if extra_opts.get('use_containers', False) is True:
                 fp.write('daemon-address={}:{}\n'.format(core_settings['rpchost'], core_settings['rpcport']))
-                config_datadir = '/data'
             fp.write('untrusted-daemon=1\n')
             fp.write('no-dns=1\n')
             fp.write('rpc-bind-port={}\n'.format(core_settings['walletrpcport']))
             fp.write('rpc-bind-ip={}\n'.format(COINS_RPCBIND_IP))
+            config_datadir = os.path.join(data_dir, 'wallets')
+            if core_settings['manage_wallet_daemon'] is False:
+                # Assume conf file is for isolated coin docker setup
+                config_datadir = '/data'
             fp.write(f'wallet-dir={config_datadir}\n')
             fp.write('log-file={}\n'.format(os.path.join(config_datadir, 'wallet.log')))
             fp.write('shared-ringdb-dir={}\n'.format(os.path.join(config_datadir, 'shared-ringdb')))
@@ -840,7 +865,7 @@ def prepareDataDir(coin, settings, chain, particl_mnemonic, extra_opts={}):
             params_dir = os.path.join(data_dir, 'pivx-params')
             downloadPIVXParams(params_dir)
             fp.write('prune=4000\n')
-            PIVX_PARAMSDIR = os.getenv('PIVX_PARAMSDIR', '/data/pivx-params' if extra_opts.get('use_containers', False) else params_dir)
+            PIVX_PARAMSDIR = os.getenv('PIVX_PARAMSDIR', params_dir)
             fp.write(f'paramsdir={PIVX_PARAMSDIR}\n')
             if PIVX_RPC_USER != '':
                 fp.write('rpcauth={}:{}${}\n'.format(PIVX_RPC_USER, salt, password_to_hmac(salt, PIVX_RPC_PWD)))
@@ -856,6 +881,9 @@ def prepareDataDir(coin, settings, chain, particl_mnemonic, extra_opts={}):
             fp.write('usehd=1\n')
             if FIRO_RPC_USER != '':
                 fp.write('rpcauth={}:{}${}\n'.format(FIRO_RPC_USER, salt, password_to_hmac(salt, FIRO_RPC_PWD)))
+        elif coin == 'digiwage':
+            if WAGE_RPC_USER != '':
+                fp.write('rpcauth={}:{}${}\n'.format(WAGE_RPC_USER, salt, password_to_hmac(salt, WAGE_RPC_PWD)))
         else:
             logger.warning('Unknown coin %s', coin)
 
@@ -1092,7 +1120,7 @@ def initialise_wallets(particl_wallet_mnemonic, with_coins, data_dir, settings, 
         try:
             swap_client = BasicSwap(fp, data_dir, settings, chain)
 
-            coins_to_create_wallets_for = (Coins.PART, Coins.BTC, Coins.LTC)
+            coins_to_create_wallets_for = (Coins.PART, Coins.BTC, Coins.LTC, Coins.PIVX)
             # Always start Particl, it must be running to initialise a wallet in addcoin mode
             # Particl must be loaded first as subsequent coins are initialised from the Particl mnemonic
             start_daemons = ['particl', ] + [c for c in with_coins if c != 'particl']
@@ -1152,10 +1180,7 @@ def initialise_wallets(particl_wallet_mnemonic, with_coins, data_dir, settings, 
                 swap_client.waitForDaemonRPC(c)
                 swap_client.initialiseWallet(c)
                 if WALLET_ENCRYPTION_PWD != '' and c not in coins_to_create_wallets_for:
-                    try:
-                        swap_client.ci(c).changeWalletPassword('', WALLET_ENCRYPTION_PWD)
-                    except Exception as e:
-                        logger.warning(f'changeWalletPassword failed for {coin_name}.')
+                    swap_client.ci(c).changeWalletPassword('', WALLET_ENCRYPTION_PWD)
 
         finally:
             if swap_client:
@@ -1182,14 +1207,12 @@ def signal_handler(sig, frame):
 
 
 def check_btc_fastsync_data(base_dir, sync_file_path):
-    github_pgp_url = 'https://raw.githubusercontent.com/tecnovert/basicswap/master/pgp'
-    gitlab_pgp_url = 'https://gitlab.com/particl/basicswap/-/raw/master/pgp'
     asc_filename = BITCOIN_FASTSYNC_FILE + '.asc'
     asc_file_path = os.path.join(base_dir, asc_filename)
     if not os.path.exists(asc_file_path):
         asc_file_urls = (
-            github_pgp_url + '/sigs/' + asc_filename,
-            gitlab_pgp_url + '/sigs/' + asc_filename,
+            'https://raw.githubusercontent.com/tecnovert/basicswap/master/pgp/sigs/' + asc_filename,
+            'https://gitlab.com/particl/basicswap/-/raw/master/pgp/sigs/' + asc_filename,
         )
         for url in asc_file_urls:
             try:
@@ -1198,13 +1221,6 @@ def check_btc_fastsync_data(base_dir, sync_file_path):
             except Exception as e:
                 logging.warning('Download failed: %s', str(e))
     gpg = gnupg.GPG()
-    pubkey_filename = '{}_{}.pgp'.format('particl', 'tecnovert')
-    pubkeyurls = [
-        github_pgp_url + '/keys/' + pubkey_filename,
-        gitlab_pgp_url + '/keys/' + pubkey_filename,
-    ]
-    if not havePubkey(gpg, expected_key_ids['tecnovert'][0]):
-        importPubkeyFromUrls(gpg, pubkeyurls)
     with open(asc_file_path, 'rb') as fp:
         verified = gpg.verify_file(fp, sync_file_path)
 
@@ -1513,6 +1529,21 @@ def main():
             'conf_target': 2,
             'core_version_group': 18,
             'chain_lookups': 'local',
+        },
+        'digiwage': {
+            'connection_type': 'rpc' if 'digiwage' in with_coins else 'none',
+            'manage_daemon': True if ('digiwage' in with_coins and WAGE_RPC_HOST == '127.0.0.1') else False,
+            'rpchost': WAGE_RPC_HOST,
+            'rpcport': WAGE_RPC_PORT + port_offset,
+            'onionport': WAGE_ONION_PORT + port_offset,
+            'datadir': os.getenv('WAGE_DATA_DIR', os.path.join(data_dir, 'digiwage')),
+            'bindir': os.path.join(bin_dir, 'digiwage'),
+            'use_segwit': False,
+            'use_csv': False,
+            'blocks_confirmed': 1,
+            'conf_target': 2,
+            'core_version_group': 20,
+            'chain_lookups': 'local',
         }
     }
 
@@ -1537,6 +1568,9 @@ def main():
     if FIRO_RPC_USER != '':
         chainclients['firo']['rpcuser'] = FIRO_RPC_USER
         chainclients['firo']['rpcpassword'] = FIRO_RPC_PWD
+    if WAGE_RPC_USER != '':
+        chainclients['digiwage']['rpcuser'] = WAGE_RPC_USER
+        chainclients['digiwage']['rpcpassword'] = WAGE_RPC_PWD
 
     chainclients['monero']['walletsdir'] = os.getenv('XMR_WALLETS_DIR', chainclients['monero']['datadir'])
 

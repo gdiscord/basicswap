@@ -14,6 +14,7 @@
             - ${DATA_PATH}/pivx:/data/pivx
             - ${DATA_PATH}/dash:/data/dash
             - ${DATA_PATH}/firo:/data/firo
+            - ${DATA_PATH}/digiwage:/data/digiwage
         environment:
             - TZ
             - UI_HTML_PORT
@@ -60,4 +61,9 @@
             - FIRO_RPC_PORT
             - FIRO_RPC_USER
             - FIRO_RPC_PWD
+            - WAGE_DATA_DIR
+            - WAGE_RPC_HOST
+            - WAGE_RPC_PORT
+            - WAGE_RPC_USER
+            - WAGE_RPC_PWD
         restart: "no"

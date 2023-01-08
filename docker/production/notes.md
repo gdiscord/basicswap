@@ -30,11 +30,6 @@ Set the latest Monero chain height, or the height your wallet must restore from:
 
 Create docker-compose config:
 
-    # Using the helper script:
-    ./scripts/build_yml_files.py -c bitcoin monero
-
-    # Or
-
     cat compose-fragments/0_start.yml > docker-compose.yml
 
     # Add the relevant coin fragments
@@ -87,7 +82,7 @@ Create config files:
     export WITH_COINS=bitcoin,litecoin,monero
 
     docker-compose -f docker-compose-prepare.yml run --rm swapprepare \
-        basicswap-prepare --nocores --usecontainers --withcoins=${WITH_COINS} --htmlhost="0.0.0.0" --particl_mnemonic=none
+        basicswap-prepare --nocores --withcoins=${WITH_COINS} --htmlhost="0.0.0.0" --particl_mnemonic=none
 
 
 Start coin cores only:
@@ -129,20 +124,6 @@ Start BasicSwap:
 
 ## Add a coin
 
-
-Stop all running containers
-
-    docker-compose stop
-
-
-Update docker-compose config:
-
-Rebuild using the helper script (must list all enabled coins):
-
-    ./scripts/build_yml_files.py -c bitcoin monero
-
-Or
-
     cat compose-fragments/1_monero-wallet.yml >> docker-compose.yml
     cat compose-fragments/1_monero-wallet.yml >> docker-compose-prepare.yml
 
@@ -150,16 +131,10 @@ Or
     cat compose-fragments/8_monero-daemon.yml >> docker-compose.yml
 
 
-Prepare config files:
-
-    docker-compose -f docker-compose-prepare.yml build swapprepare
 
     export ADD_COIN=monero
     docker-compose -f docker-compose-prepare.yml run --rm swapprepare \
-        basicswap-prepare --nocores --usecontainers --addcoin=${ADD_COIN} --htmlhost="0.0.0.0" --particl_mnemonic=none
-
-
-Prepare wallet:
+        basicswap-prepare --nocores --addcoin=${ADD_COIN} --htmlhost="0.0.0.0" --particl_mnemonic=none
 
     docker-compose build monero_daemon
     docker-compose build

@@ -1,0 +1,16 @@
+    digiwage_core:
+        image: i_digiwage
+        build:
+            context: digiwage
+            dockerfile: Dockerfile
+        container_name: digiwage_core
+        volumes:
+            - ${DATA_PATH}/digiwage:/data
+        expose:
+            - ${DIGIWAGE_RPC_PORT}
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "3"
+        restart: unless-stopped

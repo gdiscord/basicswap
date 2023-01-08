@@ -31,6 +31,7 @@ class Coins(IntEnum):
     PIVX = 11
     DASH = 12
     FIRO = 13
+    WAGE = 14
 
 
 chainparams = {
@@ -323,6 +324,43 @@ chainparams = {
             'script_address': 178,
             'key_prefix': 239,
             'hrp': '',
+            'bip44': 1,
+            'min_amount': 1000,
+            'max_amount': 100000 * COIN,
+        }
+ },
+    Coins.WAGE: {
+        'name': 'digiwage',
+        'ticker': 'WAGE',
+        'message_magic': 'DarkNet Signed Message:\n',
+        'blocks_target': 60 * 1,
+        'decimal_places': 8,
+        'has_csv': False,
+        'has_segwit': False,
+        'mainnet': {
+            'rpcport': 46002,
+            'pubkey_address': 30,
+            'script_address': 90,
+            'key_prefix': 89,
+            'bip44': 119,
+            'min_amount': 1000,
+            'max_amount': 100000 * COIN,
+        },
+        'testnet': {
+            'rpcport': 46006,
+            'pubkey_address': 139,
+            'script_address': 19,
+            'key_prefix': 239,
+            'bip44': 1,
+            'min_amount': 1000,
+            'max_amount': 100000 * COIN,
+            'name': 'testnet4',
+        },
+        'regtest': {
+            'rpcport': 46007,
+            'pubkey_address': 139,
+            'script_address': 19,
+            'key_prefix': 239,
             'bip44': 1,
             'min_amount': 1000,
             'max_amount': 100000 * COIN,

@@ -29,7 +29,7 @@ from tests.basicswap.common import (
     BASE_PORT, BASE_RPC_PORT,
     BTC_BASE_PORT, BTC_BASE_RPC_PORT, BTC_BASE_TOR_PORT,
     LTC_BASE_PORT,
-    PIVX_BASE_PORT,
+    PIVX_BASE_PORT, WAGE_BASE_PORT,
 )
 from basicswap.contrib.rpcauth import generate_salt, password_to_hmac
 
