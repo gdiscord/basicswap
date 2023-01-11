@@ -91,7 +91,7 @@ expected_key_ids = {
     'fuzzbawls': ('3BDCDA2D87A881D9',),
     'pasta': ('52527BEDABE87984',),
     'reuben': ('1290A1D0FA7EE109',),
-    'digiwage': ('8797E069355897D7',),
+    'digiwage': ('CF50DBEADD4D6C96',),
 }
 
 USE_PLATFORM = os.getenv('USE_PLATFORM', platform.system())
@@ -594,8 +594,8 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
         elif coin == 'digiwage':
             release_filename = '{}-{}-{}.{}'.format(coin, version, BIN_ARCH, FILE_EXT)
             release_url = 'https://github.com/digiwage/digiwage/releases/download/v{}/{}'.format(version + version_tag, release_filename)
-            assert_filename = 'SHA256SUMS.asc'
-            assert_url = 'https://github.com/digiwage/digiwage/releases/download/delta-2.0.1/SHA256SUMS.asc'
+            assert_filename = 'digiwage-{}-2.0.1-build.assert'.format(os_name)
+            assert_url = 'https://raw.githubusercontent.com/digiwage/gitian.sigs/digiwage/2.0.1-{}/digiwage/{}'.format(os_dir_name, assert_filename)
         elif coin == 'dash':
             release_filename = '{}-{}-{}.{}'.format('dashcore', version + version_tag, BIN_ARCH, FILE_EXT)
             release_url = 'https://github.com/dashpay/dash/releases/download/v{}/{}'.format(version + version_tag, release_filename)
@@ -624,16 +624,6 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
                 raise ValueError('Firo: Unknown architecture')
             release_url = 'https://github.com/tecnovert/particl-core/releases/download/v{}/{}'.format(version + version_tag, release_filename)
             assert_url = 'https://github.com/tecnovert/particl-core/releases/download/v%s/SHA256SUMS.asc' % (version + version_tag)
-       #elif coin == 'digiwage':
-          #  if BIN_ARCH == 'x86_64-linux-gnu':
-           #     release_filename = 'digiwage-2.0.1-x86_64-linux-gnu.tar.gz'
-          #  elif BIN_ARCH == 'osx64':
-          #      release_filename = 'digiwage-2.0.1-x86_64-apple-darwin18.tar.gz'
-        #    else:
-        #        raise ValueError('Digiwage: Unknown architecture')
-        #    release_url = 'https://github.com/digiwage/digiwage/releases/download/v{}/{}'.format(version + version_tag, release_filename)
-         #   assert_url = 'https://github.com/digiwage/digiwage/releases/download/delta-2.0.1/SHA256SUMS.asc'
-           # assert_url = 'https://github.com/digiwage/digiwage/releases/download/v%s/SHA256SUMS.asc' % (version + version_tag)
         else:
             raise ValueError('Unknown coin')
         release_path = os.path.join(bin_dir, release_filename)
@@ -646,7 +636,7 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
         if not os.path.exists(assert_path):
             downloadFile(assert_url, assert_path)
 
-        if coin not in ('firo', 'digiwage'):
+        if coin not in ('firo',):
             assert_sig_url = assert_url + ('.asc' if major_version >= 22 else '.sig')
             assert_sig_filename = '{}-{}-{}-build-{}.assert.sig'.format(coin, os_name, version, signing_key_name)
             assert_sig_path = os.path.join(bin_dir, assert_sig_filename)
@@ -684,8 +674,6 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
 
     if coin in ('pivx', 'firo'):
         pubkey_filename = '{}_{}.pgp'.format('particl', signing_key_name)
-    elif coin == 'digiwage':
-        pubkey_filename = 'digiwage.asc'
     else:
         pubkey_filename = '{}_{}.pgp'.format(coin, signing_key_name)
     pubkeyurls = [
@@ -699,12 +687,10 @@ def prepareCore(coin, version_data, settings, data_dir, extra_opts={}):
     if coin == 'firo':
         pubkeyurls.append('https://firo.org/reuben.asc')
     if coin == 'digiwage':
-        pubkeyurls.append('https://raw.githubusercontent.com/digiwage/digiwage/master/digiwage.asc')
-
-    if coin in ('monero', 'firo','digiwage'):
+        pubkeyurls.append('https://raw.githubusercontent.com/gdiscord/basicswap/master/pgp/keys/digiwage_digiwage.pgp')
+    if coin in ('monero', 'firo',):
         with open(assert_path, 'rb') as fp:
             verified = gpg.verify_file(fp)
-
         if not isValidSignature(verified) and verified.username is None:
             logger.warning('Signature made by unknown key.')
             importPubkeyFromUrls(gpg, pubkeyurls)
@@ -1120,7 +1106,7 @@ def initialise_wallets(particl_wallet_mnemonic, with_coins, data_dir, settings, 
         try:
             swap_client = BasicSwap(fp, data_dir, settings, chain)
 
-            coins_to_create_wallets_for = (Coins.PART, Coins.BTC, Coins.LTC, Coins.PIVX)
+            coins_to_create_wallets_for = (Coins.PART, Coins.BTC, Coins.LTC, Coins.PIVX, Coins.WAGE)
             # Always start Particl, it must be running to initialise a wallet in addcoin mode
             # Particl must be loaded first as subsequent coins are initialised from the Particl mnemonic
             start_daemons = ['particl', ] + [c for c in with_coins if c != 'particl']
